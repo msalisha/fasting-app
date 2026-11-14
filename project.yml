@@ -1,0 +1,73 @@
+# XcodeGen spec. On a Mac: `brew install xcodegen && xcodegen` then open Fasting.xcodeproj.
+#
+# 1. Change BASE_BUNDLE_ID to something unique to you (e.g. com.yourname.fasting).
+#    The widget ID and the App Group are derived from it automatically.
+# 2. Optionally put your Apple Team ID in DEVELOPMENT_TEAM (or pick the team in Xcode).
+name: Fasting
+
+options:
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    BASE_BUNDLE_ID: com.example.fasting
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+
+targets:
+  Fasting:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BASE_BUNDLE_ID)
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Fasting
+        AppGroupID: group.$(BASE_BUNDLE_ID)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        CFBundleURLTypes:
+          - CFBundleURLName: $(BASE_BUNDLE_ID)
+            CFBundleURLSchemes: [fasting]
+    entitlements:
+      path: App/Fasting.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.$(BASE_BUNDLE_ID)
+    dependencies:
+      - target: FastingWidget
+
+  FastingWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Widget
+      - Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BASE_BUNDLE_ID).widget
+    info:
+      path: Widget/Info.plist
+      properties:
+        CFBundleDisplayName: Fasting
+        AppGroupID: group.$(BASE_BUNDLE_ID)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Widget/FastingWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.$(BASE_BUNDLE_ID)
