@@ -59,7 +59,7 @@ struct HistoryView: View {
                     }
                 }
             }
-            .sheet(item: $editing) { FastEditor(fast: $0) }
+            .sheet(item: $editing) { FastEditor(fast: $0).environment(model) }
         }
     }
 }

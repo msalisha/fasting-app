@@ -9,6 +9,8 @@ struct FastEditor: View {
     @State private var start: Date
     @State private var end: Date
     @State private var goalHours: Double
+    /// Fixed when the editor opens, so the pickers' limits don't shift while you're using them.
+    @State private var latest = Date.now
 
     init(fast: Fast) {
         original = fast
@@ -22,16 +24,16 @@ struct FastEditor: View {
     }
 
     private var isValid: Bool {
-        original.isActive ? start <= .now : end > start
+        original.isActive ? start <= latest : end > start
     }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    DatePicker("Started", selection: $start, in: ...Date.now)
+                    DatePicker("Started", selection: $start, in: ...latest)
                     if !original.isActive {
-                        DatePicker("Ended", selection: $end, in: start...Date.now)
+                        DatePicker("Ended", selection: $end, in: min(start, latest)...latest)
                     }
                 } footer: {
                     if !original.isActive {

@@ -9,26 +9,30 @@ struct TimerView: View {
 
     var body: some View {
         NavigationStack {
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                let now = context.date
-                VStack(spacing: 28) {
-                    Spacer(minLength: 0)
-                    ring(now: now)
-                    details(now: now)
-                    Spacer(minLength: 0)
-                    actions
+            VStack(spacing: 28) {
+                // Only the clock and ring tick every second; the buttons and sheets stay put.
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    VStack(spacing: 28) {
+                        Spacer(minLength: 0)
+                        ring(now: context.date)
+                        details(now: context.date)
+                        Spacer(minLength: 0)
+                    }
                 }
-                .padding()
+                actions
             }
+            .padding()
             .navigationTitle(model.activeFast == nil ? "Not fasting" : "Fasting")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { goalMenu }
             }
             .sheet(item: $editing) { fast in
                 FastEditor(fast: fast)
+                    .environment(model)
             }
             .sheet(isPresented: $showingStartEarlier) {
                 StartEarlierSheet()
+                    .environment(model)
             }
         }
     }
@@ -163,11 +167,12 @@ private struct StartEarlierSheet: View {
     @Environment(FastingModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var start = Date.now.addingTimeInterval(-3600)
+    @State private var latest = Date.now
 
     var body: some View {
         NavigationStack {
             Form {
-                DatePicker("Last meal", selection: $start, in: ...Date.now)
+                DatePicker("Last meal", selection: $start, in: ...latest)
             }
             .navigationTitle("Start earlier")
             .navigationBarTitleDisplayMode(.inline)
