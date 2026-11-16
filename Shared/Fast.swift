@@ -42,7 +42,7 @@ struct FastingData: Codable {
 
     /// Completed fasts, newest first.
     var completedFasts: [Fast] {
-        fasts.filter { !$0.isActive }.sorted { $0.start > $1.start }
+        fasts.filter { !$0.isActive }.sorted { $0.start.isAfter($1.start) }
     }
 
     var lastCompletedFast: Fast? { completedFasts.first }

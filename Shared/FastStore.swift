@@ -49,7 +49,7 @@ enum FastStore {
     static func mutate(_ change: (inout FastingData) -> Void) -> FastingData {
         var data = load()
         change(&data)
-        data.fasts.sort { $0.start > $1.start }
+        data.fasts.sort { $0.start.isAfter($1.start) }
         if let encoded = try? encoder.encode(data) {
             try? encoded.write(to: fileURL, options: .atomic)
         }
@@ -77,7 +77,7 @@ enum FastStore {
         var finished: Fast?
         mutate { data in
             guard let i = data.fasts.firstIndex(where: \.isActive) else { return }
-            data.fasts[i].end = max(date, data.fasts[i].start)
+            data.fasts[i].end = Date.later(date, data.fasts[i].start)
             finished = data.fasts[i]
         }
         return finished
@@ -95,7 +95,7 @@ enum GoalNotifier {
     static func sync(with data: FastingData) {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: [id])
-        guard let fast = data.activeFast, fast.goalEnd > .now else { return }
+        guard let fast = data.activeFast, fast.goalEnd.isAfter(.now) else { return }
 
         let content = UNMutableNotificationContent()
         content.title = "Goal reached 🎉"

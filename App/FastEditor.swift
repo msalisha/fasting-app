@@ -20,7 +20,7 @@ struct FastEditor: View {
     }
 
     var body: some View {
-        let isValid = fast.isActive ? start <= latest : end > start
+        let isValid = fast.isActive ? start.isOnOrBefore(latest) : end.isAfter(start)
         let existsInStore = model.data.fasts.contains { $0.id == fast.id }
 
         NavigationStack {
@@ -28,7 +28,7 @@ struct FastEditor: View {
                 Section {
                     DatePicker("Started", selection: $start, in: ...latest)
                     if !fast.isActive {
-                        DatePicker("Ended", selection: $end, in: min(start, latest)...latest)
+                        DatePicker("Ended", selection: $end, in: Date.span(Date.earlier(start, latest), latest))
                     }
                 } footer: {
                     if !fast.isActive {
@@ -65,7 +65,7 @@ struct FastEditor: View {
             guard !loaded else { return }
             loaded = true
             latest = .now
-            start = min(fast.start, latest)
+            start = Date.earlier(fast.start, latest)
             end = fast.end ?? latest
             goalHours = fast.goalHours
         }
@@ -74,7 +74,7 @@ struct FastEditor: View {
     private func save() {
         var updated = fast
         updated.start = start
-        updated.end = fast.isActive ? nil : max(end, start)
+        updated.end = fast.isActive ? nil : Date.later(end, start)
         updated.goalHours = goalHours
         model.save(updated)
         dismiss()

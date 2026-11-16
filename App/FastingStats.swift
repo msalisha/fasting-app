@@ -36,12 +36,12 @@ struct DaySegment: Identifiable {
         var result: [DaySegment] = []
         for fast in fasts {
             let fastEnd = fast.end ?? now
-            guard fastEnd > rangeStart else { continue }
-            var cursor = max(fast.start, rangeStart)
-            while cursor < fastEnd {
+            guard fastEnd.isAfter(rangeStart) else { continue }
+            var cursor = Date.later(fast.start, rangeStart)
+            while cursor.isBefore(fastEnd) {
                 let dayStart = calendar.startOfDay(for: cursor)
                 guard let nextDay = calendar.date(byAdding: .day, value: 1, to: dayStart) else { break }
-                let segmentEnd = min(fastEnd, nextDay)
+                let segmentEnd = Date.earlier(fastEnd, nextDay)
                 result.append(DaySegment(
                     day: dayStart,
                     startHour: cursor.timeIntervalSince(dayStart) / 3600,
