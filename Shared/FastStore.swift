@@ -1,6 +1,7 @@
 import Foundation
 import WidgetKit
 import UserNotifications
+import FastingCore
 
 /// The App Group shared by the app and the widget extension.
 /// Its identifier comes from the `AppGroupID` key in each target's Info.plist (set in project.yml).

@@ -1,6 +1,7 @@
 import WidgetKit
 import SwiftUI
 import AppIntents
+import FastingCore
 
 // MARK: - Timeline
 

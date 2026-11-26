@@ -41,10 +41,16 @@ Tapping a Lock Screen widget opens the app. The control starts or stops a fast s
 
 ```
 project.yml          XcodeGen spec (generates the .xcodeproj, Info.plists, entitlements)
-Shared/              Compiled into both the app and the widget
+Packages/FastingCore Logic with no UI, shared by every target and unit-tested
   Fast.swift           Data model + formatting
+  FastingStats.swift   Stats and the per-day timeline segments
+  DateCompare.swift    Safe Date comparisons (use these, never < > min max on Dates)
+Shared/              Compiled into both the app and the widget
   FastStore.swift      JSON storage in the App Group, widget reloads, goal notification
   FastingIntents.swift Start / End / Toggle App Intents
 App/                 The iPhone app (timer, history + charts, editor, Siri shortcuts)
 Widget/              Lock Screen and Home Screen widgets + the Lock Screen control
+.github/workflows    CI: runs the FastingCore tests and builds the app on every push
 ```
+
+Run the logic tests locally with `swift test --package-path Packages/FastingCore`.

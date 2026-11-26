@@ -1,4 +1,5 @@
 import SwiftUI
+import FastingCore
 
 struct TimerView: View {
     @Environment(FastingModel.self) private var model

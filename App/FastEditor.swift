@@ -1,4 +1,5 @@
 import SwiftUI
+import FastingCore
 
 /// Edit an existing fast's times, or add a fast you forgot to log.
 struct FastEditor: View {

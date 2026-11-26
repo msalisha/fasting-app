@@ -6,7 +6,7 @@ import Foundation
 // These helpers compare the raw seconds (plain Doubles) instead, which works on every iOS version.
 // Use them for every Date comparison in this app.
 
-extension Date {
+public extension Date {
     var seconds: TimeInterval { timeIntervalSinceReferenceDate }
 
     func isBefore(_ other: Date) -> Bool { seconds < other.seconds }

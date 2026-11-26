@@ -1,4 +1,5 @@
 import AppIntents
+import FastingCore
 
 /// Used by the home-screen widget button, Siri and Shortcuts.
 struct StartFastIntent: AppIntent {

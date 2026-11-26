@@ -9,3 +9,7 @@ xcuserdata/
 DerivedData/
 build/
 .DS_Store
+
+# Swift package build output
+.build/
+.swiftpm/

@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import FastingCore
 
 struct HistoryView: View {
     @Environment(FastingModel.self) private var model

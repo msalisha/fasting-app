@@ -20,10 +20,15 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     TARGETED_DEVICE_FAMILY: "1"
 
+packages:
+  FastingCore:
+    path: Packages/FastingCore
+
 targets:
   Fasting:
     type: application
     platform: iOS
+    scheme: {}
     sources:
       - App
       - Shared
@@ -49,6 +54,7 @@ targets:
           - group.$(BASE_BUNDLE_ID)
     dependencies:
       - target: FastingWidget
+      - package: FastingCore
 
   FastingWidget:
     type: app-extension
@@ -59,6 +65,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(BASE_BUNDLE_ID).widget
+    dependencies:
+      - package: FastingCore
     info:
       path: Widget/Info.plist
       properties:

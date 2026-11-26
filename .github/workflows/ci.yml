@@ -1,0 +1,52 @@
+name: CI
+
+# Compiles the app and runs the FastingCore unit tests on every push,
+# so build errors are caught before the code reaches a phone.
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  core-tests:
+    name: FastingCore tests
+    runs-on: ubuntu-latest
+    container: swift:6.0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run unit tests
+        run: swift test --package-path Packages/FastingCore
+
+  ios-build:
+    name: Build iOS app
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen
+      - name: Build app and widget for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Fasting.xcodeproj \
+            -scheme Fasting \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee build.log | grep -E "error|warning: unre|BUILD (SUCCEEDED|FAILED)|\*\* " || true
+          grep -q "BUILD SUCCEEDED" build.log
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
