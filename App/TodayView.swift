@@ -208,7 +208,7 @@ struct TodayView: View {
                 Button {
                     model.start()
                 } label: {
-                    Text("Start fast").frame(maxWidth: .infinity)
+                    Text("Start fast").frame(maxWidth: .infinity).foregroundStyle(Theme.onAccent)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)

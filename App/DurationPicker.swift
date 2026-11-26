@@ -63,11 +63,11 @@ struct DurationPicker: View {
         } label: {
             VStack(spacing: 4) {
                 Text(preset.title).font(Theme.numerals(24))
-                Text(preset.subtitle).font(.caption).foregroundStyle(selected ? Color.white.opacity(0.85) : Color.secondary)
+                Text(preset.subtitle).font(.caption).foregroundStyle(selected ? Theme.onAccent.opacity(0.8) : Color.secondary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
-            .foregroundStyle(selected ? Color.white : Color.primary)
+            .foregroundStyle(selected ? Theme.onAccent : Color.primary)
             .background(selected ? Theme.accent : Theme.card,
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }

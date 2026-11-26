@@ -47,7 +47,7 @@ struct StagesView: View {
                             .font(.caption2.weight(.semibold))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 2)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Theme.onAccent)
                             .background(Theme.accent, in: Capsule())
                     }
                 }

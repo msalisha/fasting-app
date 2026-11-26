@@ -1,9 +1,12 @@
 import SwiftUI
+import WidgetKit
 import FastingCore
 
 struct SettingsView: View {
     @Environment(FastingModel.self) private var model
     @AppStorage(GoalNotifier.enabledKey, store: AppGroup.defaults) private var notifyGoalReached = true
+    @AppStorage(AccentTheme.storageKey, store: AppGroup.defaults) private var accentTheme = AccentTheme.sage.rawValue
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system.rawValue
     @State private var choosingGoal = false
 
     private var version: String {
@@ -24,6 +27,25 @@ struct SettingsView: View {
                     NavigationLink("Fasting stages") {
                         StagesView()
                     }
+                }
+
+                Section("Appearance") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Colour")
+                        HStack(spacing: 14) {
+                            ForEach(AccentTheme.allCases) { theme in
+                                swatch(theme)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+
+                    Picker("Mode", selection: $appearance) {
+                        ForEach(AppAppearance.allCases) { mode in
+                            Text(mode.name).tag(mode.rawValue)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                 }
 
                 Section {
@@ -60,5 +82,32 @@ struct SettingsView: View {
             }
         }
         .tint(Theme.accent)
+    }
+
+    private func swatch(_ theme: AccentTheme) -> some View {
+        let selected = theme.rawValue == accentTheme
+
+        return Button {
+            accentTheme = theme.rawValue
+            WidgetCenter.shared.reloadAllTimelines()
+        } label: {
+            Circle()
+                .fill(theme.color)
+                .frame(width: 34, height: 34)
+                .overlay {
+                    if selected {
+                        Image(systemName: "checkmark")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Theme.onAccent)
+                    }
+                }
+                .padding(4)
+                .overlay {
+                    Circle().strokeBorder(selected ? theme.color : Color.clear, lineWidth: 2)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(theme.name)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

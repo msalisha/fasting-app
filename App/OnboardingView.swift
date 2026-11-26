@@ -40,6 +40,7 @@ struct OnboardingView: View {
             } label: {
                 Text(page < pages.count - 1 ? "Continue" : "Get started")
                     .frame(maxWidth: .infinity)
+                    .foregroundStyle(Theme.onAccent)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)

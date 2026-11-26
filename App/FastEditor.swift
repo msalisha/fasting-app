@@ -67,6 +67,7 @@ struct FastEditor: View {
                 }
             }
         }
+        .tint(Theme.accent)
         .onAppear {
             guard !loaded else { return }
             loaded = true

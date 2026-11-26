@@ -3,10 +3,13 @@ import UIKit
 
 /// Stillfast's look: calm and minimal. One soft accent colour, generous spacing, rounded numerals.
 enum Theme {
-    /// Soft sage green.
-    static let accent = dynamic(light: (0.33, 0.53, 0.44), dark: (0.56, 0.78, 0.67))
+    /// The colour scheme the user picked in Settings (sage green unless changed).
+    static var accent: Color { AccentTheme.current.color }
+    /// Text and icons drawn on top of the accent colour: white in light mode, black in dark mode,
+    /// because the dark-mode accents are light.
+    static let onAccent = dynamic(light: (1, 1, 1), dark: (0, 0, 0))
     /// A goal that was reached.
-    static let success = accent
+    static var success: Color { accent }
     /// A fast that ended short of its goal: a muted amber, not an alarming red.
     static let shortfall = dynamic(light: (0.80, 0.58, 0.30), dark: (0.90, 0.70, 0.42))
     /// The empty part of the ring and other quiet fills.
@@ -30,11 +33,54 @@ enum Theme {
         .system(size: size, weight: weight, design: .rounded).monospacedDigit()
     }
 
-    private static func dynamic(light: (Double, Double, Double), dark: (Double, Double, Double)) -> Color {
+    static func dynamic(light: (Double, Double, Double), dark: (Double, Double, Double)) -> Color {
         Color(UIColor { traits in
             let c = traits.userInterfaceStyle == .dark ? dark : light
             return UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1)
         })
+    }
+}
+
+/// The colour schemes offered in Settings. Each has a light-mode and a dark-mode shade.
+enum AccentTheme: String, CaseIterable, Identifiable {
+    case sage, ocean, lavender, rose, graphite
+
+    /// App Group defaults key, so widgets can follow the same choice.
+    static let storageKey = "accentTheme"
+
+    var id: String { rawValue }
+    var name: String { rawValue.capitalized }
+
+    var color: Color {
+        switch self {
+        case .sage: Theme.dynamic(light: (0.33, 0.53, 0.44), dark: (0.56, 0.78, 0.67))
+        case .ocean: Theme.dynamic(light: (0.20, 0.47, 0.66), dark: (0.47, 0.72, 0.90))
+        case .lavender: Theme.dynamic(light: (0.48, 0.42, 0.72), dark: (0.71, 0.66, 0.93))
+        case .rose: Theme.dynamic(light: (0.74, 0.38, 0.47), dark: (0.93, 0.60, 0.68))
+        case .graphite: Theme.dynamic(light: (0.30, 0.32, 0.35), dark: (0.78, 0.80, 0.83))
+        }
+    }
+
+    static var current: AccentTheme {
+        AccentTheme(rawValue: AppGroup.defaults.string(forKey: storageKey) ?? "") ?? .sage
+    }
+}
+
+/// Light, dark, or whatever the phone is set to.
+enum AppAppearance: String, CaseIterable, Identifiable {
+    case system, light, dark
+
+    static let storageKey = "appAppearance"
+
+    var id: String { rawValue }
+    var name: String { rawValue.capitalized }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
     }
 }
 

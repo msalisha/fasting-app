@@ -20,20 +20,30 @@ struct FastingApp: App {
 
 struct ContentView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage(AccentTheme.storageKey, store: AppGroup.defaults) private var accentTheme = AccentTheme.sage.rawValue
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system.rawValue
+    @State private var tab = AppTab.today
+
+    enum AppTab: Hashable {
+        case today, history, settings
+    }
 
     var body: some View {
-        TabView {
-            Tab("Today", systemImage: "circle.dotted") {
+        TabView(selection: $tab) {
+            Tab("Today", systemImage: "circle.dotted", value: AppTab.today) {
                 TodayView()
             }
-            Tab("History", systemImage: "chart.bar") {
+            Tab("History", systemImage: "chart.bar", value: AppTab.history) {
                 HistoryView()
             }
-            Tab("Settings", systemImage: "gearshape") {
+            Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
                 SettingsView()
             }
         }
+        // Rebuild every screen when the colour scheme changes, so they all pick up the new accent.
+        .id(accentTheme)
         .tint(Theme.accent)
+        .preferredColorScheme(AppAppearance(rawValue: appearance)?.colorScheme)
         .fullScreenCover(isPresented: Binding(get: { !hasCompletedOnboarding }, set: { _ in })) {
             OnboardingView { hasCompletedOnboarding = true }
         }
