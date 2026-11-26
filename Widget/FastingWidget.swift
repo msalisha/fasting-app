@@ -53,9 +53,9 @@ struct FastingWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: FastStore.widgetKind, provider: FastingProvider()) { entry in
             FastingWidgetView(entry: entry)
-                .widgetURL(URL(string: "fasting://open"))
+                .widgetURL(URL(string: "stillfast://open"))
         }
-        .configurationDisplayName("Fasting")
+        .configurationDisplayName("Stillfast")
         .description("See how long you've been fasting.")
         .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline, .systemSmall])
     }

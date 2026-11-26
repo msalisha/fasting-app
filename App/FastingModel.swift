@@ -1,4 +1,5 @@
 import Foundation
+import CoreData
 import Observation
 import FastingCore
 
@@ -10,6 +11,29 @@ final class FastingModel {
     var activeFast: Fast? { data.activeFast }
     var completedFasts: [Fast] { data.completedFasts }
     var goalHours: Double { data.goalHours }
+
+    @ObservationIgnored private var observers: [NSObjectProtocol] = []
+
+    init() {
+        let center = NotificationCenter.default
+
+        // Another process (the widget or control) or iCloud changed the database.
+        observers.append(center.addObserver(forName: .NSPersistentStoreRemoteChange, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.reload() }
+        })
+
+        // iCloud finished downloading changes from another device: the widgets need to hear about it too.
+        observers.append(center.addObserver(forName: NSPersistentCloudKitContainer.eventChangedNotification, object: nil, queue: .main) { [weak self] note in
+            guard let event = note.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event,
+                  event.type == .import, event.endDate != nil, event.succeeded
+            else { return }
+            Task { @MainActor in
+                guard let self else { return }
+                self.reload()
+                FastStore.refreshSurfaces(with: self.data)
+            }
+        })
+    }
 
     func reload() {
         data = FastStore.load()

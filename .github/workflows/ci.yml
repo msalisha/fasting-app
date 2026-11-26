@@ -38,8 +38,8 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild build \
-            -project Fasting.xcodeproj \
-            -scheme Fasting \
+            -project Stillfast.xcodeproj \
+            -scheme Stillfast \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             | tee build.log | grep -E "error|warning: unre|BUILD (SUCCEEDED|FAILED)|\*\* " || true

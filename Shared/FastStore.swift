@@ -1,63 +1,74 @@
 import Foundation
+import SwiftData
 import WidgetKit
 import UserNotifications
 import FastingCore
 
-/// The App Group shared by the app and the widget extension.
-/// Its identifier comes from the `AppGroupID` key in each target's Info.plist (set in project.yml).
-enum AppGroup {
-    static let id: String =
-        Bundle.main.object(forInfoDictionaryKey: "AppGroupID") as? String ?? "group.com.example.fasting"
-
-    static var containerURL: URL {
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: id)
-            ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-    }
-}
-
-/// Reads and writes `FastingData` as JSON in the shared App Group container,
+/// Reads and writes fasts in the shared database (see `Persistence`),
 /// so the app, the widgets and the Control (lock screen button) all see the same data.
 enum FastStore {
     static let widgetKind = "FastingWidget"
     static let controlKind = "FastingControl"
 
-    private static var fileURL: URL {
-        AppGroup.containerURL.appendingPathComponent("fasting.json")
+    private static let goalKey = "defaultGoalSeconds"
+
+    /// Goal given to the next fast that is started. Stored per device in the App Group.
+    private static var defaultGoalSeconds: TimeInterval {
+        get {
+            let stored = AppGroup.defaults.double(forKey: goalKey)
+            return stored > 0 ? stored : FastingData.defaultGoalSeconds
+        }
+        set { AppGroup.defaults.set(newValue, forKey: goalKey) }
     }
 
-    private static let encoder: JSONEncoder = {
-        let e = JSONEncoder()
-        e.dateEncodingStrategy = .iso8601
-        e.outputFormatting = [.prettyPrinted, .sortedKeys]
-        return e
-    }()
-
-    private static let decoder: JSONDecoder = {
-        let d = JSONDecoder()
-        d.dateDecodingStrategy = .iso8601
-        return d
-    }()
-
     static func load() -> FastingData {
-        guard let data = try? Data(contentsOf: fileURL),
-              let decoded = try? decoder.decode(FastingData.self, from: data)
-        else { return FastingData() }
-        return decoded
+        let context = ModelContext(Persistence.container)
+        return snapshot(of: fetchRecords(in: context))
     }
 
     /// Load, change, save, and refresh every surface that shows fasting state.
     @discardableResult
     static func mutate(_ change: (inout FastingData) -> Void) -> FastingData {
-        var data = load()
+        let context = ModelContext(Persistence.container)
+        let records = fetchRecords(in: context)
+
+        var data = snapshot(of: records)
         change(&data)
-        data.fasts.sort { $0.start.isAfter($1.start) }
-        if let encoded = try? encoder.encode(data) {
-            try? encoded.write(to: fileURL, options: .atomic)
+        data = data.resolvingDuplicates()
+
+        // Make the stored records match `data`: update or insert what is in it, delete what is not.
+        var wanted: [UUID: Fast] = [:]
+        for fast in data.fasts { wanted[fast.id] = fast }
+        for record in records {
+            if let fast = wanted.removeValue(forKey: record.uuid) {
+                if record.fast != fast { record.update(from: fast) }
+            } else {
+                context.delete(record)
+            }
         }
+        for fast in wanted.values {
+            context.insert(FastRecord(fast))
+        }
+        try? context.save()
+        defaultGoalSeconds = data.goalSeconds
+
+        refreshSurfaces(with: data)
+        return data
+    }
+
+    /// Reloads widgets and the control, and reschedules the goal notification.
+    static func refreshSurfaces(with data: FastingData) {
         WidgetCenter.shared.reloadAllTimelines()
         ControlCenter.shared.reloadControls(ofKind: controlKind)
         GoalNotifier.sync(with: data)
-        return data
+    }
+
+    private static func fetchRecords(in context: ModelContext) -> [FastRecord] {
+        (try? context.fetch(FetchDescriptor<FastRecord>())) ?? []
+    }
+
+    private static func snapshot(of records: [FastRecord]) -> FastingData {
+        FastingData(fasts: records.map(\.fast), goalSeconds: defaultGoalSeconds).resolvingDuplicates()
     }
 
     /// Starts a fast unless one is already running. Returns true if a fast was started.
@@ -66,7 +77,7 @@ enum FastStore {
         var started = false
         mutate { data in
             guard data.activeFast == nil else { return }
-            data.fasts.append(Fast(start: date, goalHours: data.goalHours))
+            data.fasts.append(Fast(start: date, goalSeconds: data.goalSeconds))
             started = true
         }
         return started
@@ -100,7 +111,7 @@ enum GoalNotifier {
 
         let content = UNMutableNotificationContent()
         content.title = "Goal reached 🎉"
-        content.body = "You've fasted for \(Format.goal(fast.goalHours)). End your fast whenever you're ready."
+        content.body = "You've fasted for \(Format.goal(seconds: fast.goalSeconds)). End your fast whenever you're ready."
         content.sound = .default
 
         let trigger = UNTimeIntervalNotificationTrigger(

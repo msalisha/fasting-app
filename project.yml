@@ -1,9 +1,9 @@
-# XcodeGen spec. On a Mac: `brew install xcodegen && xcodegen` then open Fasting.xcodeproj.
+# XcodeGen spec. On a Mac: `brew install xcodegen && xcodegen` then open Stillfast.xcodeproj.
 #
-# 1. Change BASE_BUNDLE_ID to something unique to you (e.g. com.yourname.fasting).
-#    The widget ID and the App Group are derived from it automatically.
-# 2. Optionally put your Apple Team ID in DEVELOPMENT_TEAM (or pick the team in Xcode).
-name: Fasting
+# BASE_BUNDLE_ID is the app's permanent ID. The widget ID, the App Group and the iCloud
+# container are derived from it automatically.
+# Put your 10-character Apple Team ID in DEVELOPMENT_TEAM (or pick the team in Xcode for both targets).
+name: Stillfast
 
 options:
   deploymentTarget:
@@ -12,7 +12,7 @@ options:
 
 settings:
   base:
-    BASE_BUNDLE_ID: com.alisha.fasting
+    BASE_BUNDLE_ID: com.alishasutcliffe.stillfast
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
@@ -25,7 +25,7 @@ packages:
     path: Packages/FastingCore
 
 targets:
-  Fasting:
+  Stillfast:
     type: application
     platform: iOS
     scheme: {}
@@ -40,23 +40,30 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: Fasting
+        CFBundleDisplayName: Stillfast
         AppGroupID: group.$(BASE_BUNDLE_ID)
+        CloudContainerID: iCloud.$(BASE_BUNDLE_ID)
+        UIBackgroundModes: [remote-notification]
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         CFBundleURLTypes:
           - CFBundleURLName: $(BASE_BUNDLE_ID)
-            CFBundleURLSchemes: [fasting]
+            CFBundleURLSchemes: [stillfast]
     entitlements:
-      path: App/Fasting.entitlements
+      path: App/Stillfast.entitlements
       properties:
         com.apple.security.application-groups:
           - group.$(BASE_BUNDLE_ID)
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.$(BASE_BUNDLE_ID)
+        com.apple.developer.icloud-services:
+          - CloudKit
+        aps-environment: development
     dependencies:
-      - target: FastingWidget
+      - target: StillfastWidget
       - package: FastingCore
 
-  FastingWidget:
+  StillfastWidget:
     type: app-extension
     platform: iOS
     sources:
@@ -70,12 +77,12 @@ targets:
     info:
       path: Widget/Info.plist
       properties:
-        CFBundleDisplayName: Fasting
+        CFBundleDisplayName: Stillfast
         AppGroupID: group.$(BASE_BUNDLE_ID)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
-      path: Widget/FastingWidget.entitlements
+      path: Widget/StillfastWidget.entitlements
       properties:
         com.apple.security.application-groups:
           - group.$(BASE_BUNDLE_ID)

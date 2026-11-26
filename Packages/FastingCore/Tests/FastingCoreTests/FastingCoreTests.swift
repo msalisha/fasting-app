@@ -35,8 +35,38 @@ final class FastTests: XCTestCase {
         XCTAssertEqual(data.lastCompletedFast, new)
     }
 
+    func testGoalSecondsAndHoursAgree() {
+        var fast = Fast(start: t0, goalSeconds: 30 * 60)
+        XCTAssertEqual(fast.goalHours, 0.5, accuracy: 0.0001)
+        XCTAssertEqual(fast.goalEnd, t0.addingTimeInterval(1800))
+        XCTAssertTrue(fast.metGoal(at: t0.addingTimeInterval(1800)))
+        fast.goalHours = 18
+        XCTAssertEqual(fast.goalSeconds, 18 * 3600, accuracy: 0.0001)
+        XCTAssertEqual(Fast(start: t0, goalHours: 16).goalSeconds, 57_600, accuracy: 0.0001)
+        XCTAssertEqual(FastingData().goalSeconds, 57_600, accuracy: 0.0001)
+    }
+
+    func testDuplicateRunningFastsKeepTheEarliest() {
+        let done = Fast(start: t0, end: t0.addingTimeInterval(3600), goalHours: 16)
+        let first = Fast(start: t0.addingTimeInterval(10_000), goalHours: 16)
+        let second = Fast(start: t0.addingTimeInterval(10_300), goalHours: 16)
+        let data = FastingData(fasts: [second, done, first])
+        XCTAssertEqual(data.duplicateActiveFastIDs, [second.id])
+        let resolved = data.resolvingDuplicates()
+        XCTAssertEqual(resolved.fasts, [first, done])
+        XCTAssertEqual(resolved.activeFast, first)
+    }
+
+    func testNoDuplicatesLeavesDataAlone() {
+        let done = Fast(start: t0, end: t0.addingTimeInterval(3600), goalHours: 16)
+        let active = Fast(start: t0.addingTimeInterval(10_000), goalHours: 16)
+        let data = FastingData(fasts: [done, active])
+        XCTAssertTrue(data.duplicateActiveFastIDs.isEmpty)
+        XCTAssertEqual(data.resolvingDuplicates().fasts, [active, done])
+    }
+
     func testCodableRoundTrip() throws {
-        let data = FastingData(fasts: [Fast(start: t0, end: t0.addingTimeInterval(60), goalHours: 18)], goalHours: 18)
+        let data = FastingData(fasts: [Fast(start: t0, end: t0.addingTimeInterval(60), goalHours: 18)], goalSeconds: 18 * 3600)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         let decoder = JSONDecoder()
@@ -61,7 +91,10 @@ final class FormatTests: XCTestCase {
 
     func testGoal() {
         XCTAssertEqual(Format.goal(16), "16h")
-        XCTAssertEqual(Format.goal(16.5), "16.5h")
+        XCTAssertEqual(Format.goal(16.5), "16h 30m")
+        XCTAssertEqual(Format.goal(seconds: 45 * 60), "45m")
+        XCTAssertEqual(Format.goal(seconds: 72 * 3600), "72h")
+        XCTAssertEqual(Format.goal(seconds: 16 * 3600 + 20 * 60), "16h 20m")
     }
 }
 
