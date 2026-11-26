@@ -113,36 +113,59 @@ private struct RectangularView: View {
     let entry: FastingEntry
 
     var body: some View {
+        // Three short rows: iOS gives this widget only about three lines of height.
         if let fast = entry.active {
-            VStack(alignment: .leading, spacing: 1) {
-                Label(fast.metGoal(at: entry.date) ? "Goal reached" : "Fasting",
-                      systemImage: fast.metGoal(at: entry.date) ? "checkmark.circle.fill" : "timer")
-                    .font(.headline)
-                    .widgetAccentable()
-                Text(fast.start, style: .timer)
-                    .font(.title3.monospacedDigit().weight(.semibold))
-                ProgressView(value: fast.progress(at: entry.date))
-                    .tint(.primary)
-                Text("Goal \(Format.goal(fast.goalHours)) · \(fast.goalEnd, style: .time)")
-                    .font(.caption2)
+            let met = fast.metGoal(at: entry.date)
+            let goal = Format.goal(seconds: fast.goalSeconds)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Image(systemName: met ? "checkmark.circle.fill" : "timer")
+                    Text(met ? "Goal reached" : "Fasting")
+                    Spacer(minLength: 4)
+                    // Longest version that fits: goal and end time, else just the goal.
+                    ViewThatFits {
+                        Text("\(goal) · \(fast.goalEnd, style: .time)")
+                        Text(goal)
+                    }
                     .foregroundStyle(.secondary)
+                }
+                .font(.footnote.weight(.semibold))
+                .lineLimit(1)
+                .widgetAccentable()
+
+                // Always h:mm:ss, so 51 minutes reads "0:51:35" rather than "51:35".
+                Text(timerInterval: Date.span(fast.start, .distantFuture), countsDown: false, showsHours: true)
+                    .font(.system(size: 26, weight: .semibold, design: .rounded).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+
+                Gauge(value: fast.progress(at: entry.date)) {
+                    EmptyView()
+                }
+                .gaugeStyle(.accessoryLinearCapacity)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             VStack(alignment: .leading, spacing: 2) {
                 Label("Not fasting", systemImage: "fork.knife")
-                    .font(.headline)
+                    .font(.footnote.weight(.semibold))
+                    .lineLimit(1)
                     .widgetAccentable()
                 if let last = entry.lastFast, let end = last.end {
-                    Text("Last: \(Format.hoursMinutes(last.duration()))")
-                        .font(.body.monospacedDigit())
+                    Text("Last \(Format.hoursMinutes(last.duration()))")
+                        .font(.system(size: 22, weight: .semibold, design: .rounded).monospacedDigit())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                     Text("Ate \(end, style: .relative) ago")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 } else {
                     Text("Tap to start a fast")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -158,7 +181,7 @@ private struct InlineView: View {
     var body: some View {
         if let fast = entry.active {
             Label {
-                Text(fast.start, style: .timer)
+                Text(timerInterval: Date.span(fast.start, .distantFuture), countsDown: false, showsHours: true)
             } icon: {
                 Image(systemName: "timer")
             }
@@ -178,7 +201,7 @@ private struct SmallView: View {
             if let fast = entry.active {
                 Label(fast.metGoal(at: entry.date) ? "Goal reached" : "Fasting", systemImage: "timer")
                     .font(.caption.weight(.semibold))
-                Text(fast.start, style: .timer)
+                Text(timerInterval: Date.span(fast.start, .distantFuture), countsDown: false, showsHours: true)
                     .font(.title2.monospacedDigit().weight(.bold))
                 ProgressView(value: fast.progress(at: entry.date))
                     .tint(.white)
