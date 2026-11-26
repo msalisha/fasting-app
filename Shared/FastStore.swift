@@ -99,6 +99,12 @@ enum FastStore {
 /// Schedules a local notification for when the running fast reaches its goal.
 enum GoalNotifier {
     private static let id = "fasting.goal-reached"
+    /// App Group defaults key for the "Goal reached" setting. On unless the user turns it off.
+    static let enabledKey = "notifyGoalReached"
+
+    private static var isEnabled: Bool {
+        AppGroup.defaults.object(forKey: enabledKey) as? Bool ?? true
+    }
 
     static func requestPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
@@ -107,10 +113,10 @@ enum GoalNotifier {
     static func sync(with data: FastingData) {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: [id])
-        guard let fast = data.activeFast, fast.goalEnd.isAfter(.now) else { return }
+        guard isEnabled, let fast = data.activeFast, fast.goalEnd.isAfter(.now) else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = "Goal reached 🎉"
+        content.title = "Goal reached"
         content.body = "You've fasted for \(Format.goal(seconds: fast.goalSeconds)). End your fast whenever you're ready."
         content.sound = .default
 

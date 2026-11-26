@@ -19,14 +19,23 @@ struct FastingApp: App {
 }
 
 struct ContentView: View {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
     var body: some View {
         TabView {
-            Tab("Fast", systemImage: "timer") {
-                TimerView()
+            Tab("Today", systemImage: "circle.dotted") {
+                TodayView()
             }
-            Tab("History", systemImage: "chart.bar.xaxis") {
+            Tab("History", systemImage: "chart.bar") {
                 HistoryView()
             }
+            Tab("Settings", systemImage: "gearshape") {
+                SettingsView()
+            }
+        }
+        .tint(Theme.accent)
+        .fullScreenCover(isPresented: Binding(get: { !hasCompletedOnboarding }, set: { _ in })) {
+            OnboardingView { hasCompletedOnboarding = true }
         }
     }
 }

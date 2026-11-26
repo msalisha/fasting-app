@@ -195,3 +195,57 @@ final class DaySegmentTests: XCTestCase {
         XCTAssertEqual(days, [date(12, 0), date(11, 0), date(10, 0)])
     }
 }
+
+final class PresetTests: XCTestCase {
+    func testPresetsAreOrderedAndUnique() {
+        let hours = FastingPreset.all.map(\.hours)
+        XCTAssertEqual(hours, [12, 14, 16, 18, 20, 24, 36])
+        XCTAssertEqual(FastingPreset.all[2].title, "16h")
+        XCTAssertEqual(FastingPreset.all[2].seconds, 57_600)
+    }
+
+    func testMatching() {
+        XCTAssertEqual(FastingPreset.matching(seconds: 16 * 3600)?.hours, 16)
+        XCTAssertNil(FastingPreset.matching(seconds: 16.5 * 3600))
+    }
+
+    func testCustomClampRoundsAndLimits() {
+        XCTAssertEqual(CustomDuration.clamp(0), 30 * 60)
+        XCTAssertEqual(CustomDuration.clamp(16 * 3600 + 32 * 60), 16 * 3600 + 30 * 60)
+        XCTAssertEqual(CustomDuration.clamp(16 * 3600 + 33 * 60), 16 * 3600 + 35 * 60)
+        XCTAssertEqual(CustomDuration.clamp(999 * 3600), 168 * 3600)
+    }
+
+    func testSplitAndCombine() {
+        let parts = CustomDuration.split(16 * 3600 + 30 * 60)
+        XCTAssertEqual(parts.hours, 16)
+        XCTAssertEqual(parts.minutes, 30)
+        XCTAssertEqual(CustomDuration.combine(hours: 16, minutes: 30), 59_400)
+        XCTAssertEqual(CustomDuration.combine(hours: 0, minutes: 0), 1800)
+        XCTAssertEqual(CustomDuration.combine(hours: 168, minutes: 55), 168 * 3600)
+    }
+}
+
+final class StageTests: XCTestCase {
+    func testStagesStartAtZeroAndIncrease() {
+        let starts = FastingStage.all.map(\.startHour)
+        XCTAssertEqual(starts.first, 0)
+        XCTAssertEqual(starts, starts.sorted())
+        XCTAssertEqual(Set(FastingStage.all.map(\.id)).count, FastingStage.all.count)
+    }
+
+    func testStageLookup() {
+        XCTAssertEqual(FastingStage.stage(atElapsed: -5).name, "Fed")
+        XCTAssertEqual(FastingStage.stage(atElapsed: 0).name, "Fed")
+        XCTAssertEqual(FastingStage.stage(atElapsed: 4 * 3600 - 1).name, "Fed")
+        XCTAssertEqual(FastingStage.stage(atElapsed: 4 * 3600).name, "Settling")
+        XCTAssertEqual(FastingStage.stage(atElapsed: 19 * 3600).name, "Fat burning")
+        XCTAssertEqual(FastingStage.stage(atElapsed: 100 * 3600).name, "Extended fast")
+    }
+
+    func testNextStage() {
+        XCTAssertEqual(FastingStage.next(afterElapsed: 0)?.name, "Settling")
+        XCTAssertEqual(FastingStage.next(afterElapsed: 12 * 3600)?.name, "Fat burning")
+        XCTAssertNil(FastingStage.next(afterElapsed: 48 * 3600))
+    }
+}

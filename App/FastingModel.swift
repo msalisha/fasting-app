@@ -10,7 +10,7 @@ final class FastingModel {
 
     var activeFast: Fast? { data.activeFast }
     var completedFasts: [Fast] { data.completedFasts }
-    var goalHours: Double { data.goalHours }
+    var goalSeconds: TimeInterval { data.goalSeconds }
 
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
 
@@ -51,11 +51,11 @@ final class FastingModel {
     }
 
     /// Changes the default goal, and the running fast's goal too.
-    func setGoal(_ hours: Double) {
+    func setGoal(seconds: TimeInterval) {
         data = FastStore.mutate { data in
-            data.goalHours = hours
+            data.goalSeconds = seconds
             if let i = data.fasts.firstIndex(where: \.isActive) {
-                data.fasts[i].goalHours = hours
+                data.fasts[i].goalSeconds = seconds
             }
         }
     }

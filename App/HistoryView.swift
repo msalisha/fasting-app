@@ -30,7 +30,7 @@ struct HistoryView: View {
 
                     switch chart {
                     case .timeline: TimelineChart(fasts: model.data.fasts)
-                    case .duration: DurationChart(fasts: model.completedFasts, goalHours: model.goalHours)
+                    case .duration: DurationChart(fasts: model.completedFasts, goalSeconds: model.goalSeconds)
                     }
                 }
 
@@ -54,7 +54,7 @@ struct HistoryView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         let end = Date.now
-                        editing = Fast(start: end.addingTimeInterval(-model.goalHours * 3600), end: end, goalHours: model.goalHours)
+                        editing = Fast(start: end.addingTimeInterval(-model.goalSeconds), end: end, goalSeconds: model.goalSeconds)
                     } label: {
                         Label("Add past fast", systemImage: "plus")
                     }
@@ -62,6 +62,7 @@ struct HistoryView: View {
             }
             .sheet(item: $editing) { FastEditor(fast: $0).environment(model) }
         }
+        .tint(Theme.accent)
     }
 }
 
@@ -81,13 +82,12 @@ private struct StatsGrid: View {
     }
 
     private func tile(_ title: String, _ value: String, _ icon: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             Label(title, systemImage: icon).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.title3.weight(.semibold).monospacedDigit())
+            Text(value).font(Theme.numerals(22))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 14))
+        .card()
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -134,9 +134,9 @@ private struct TimelineChart: View {
 
     private var legend: some View {
         HStack(spacing: 16) {
-            legendItem(.indigo, "In progress")
-            legendItem(.green, "Goal met")
-            legendItem(.orange, "Short of goal")
+            legendItem(Theme.accent.opacity(0.45), "In progress")
+            legendItem(Theme.success, "Goal met")
+            legendItem(Theme.shortfall, "Short of goal")
         }
         .font(.caption)
         .foregroundStyle(.secondary)
@@ -150,8 +150,8 @@ private struct TimelineChart: View {
     }
 
     private func color(for segment: DaySegment) -> Color {
-        if segment.isActive { return .indigo }
-        return segment.metGoal ? .green : .orange
+        if segment.isActive { return Theme.accent.opacity(0.45) }
+        return segment.metGoal ? Theme.success : Theme.shortfall
     }
 
     private func label(_ day: Date) -> String {
@@ -171,7 +171,7 @@ private struct TimelineChart: View {
 /// Length of each recent fast compared to the goal.
 private struct DurationChart: View {
     let fasts: [Fast]
-    let goalHours: Double
+    let goalSeconds: TimeInterval
 
     var body: some View {
         let recent = Array(fasts.prefix(14).reversed())
@@ -186,14 +186,14 @@ private struct DurationChart: View {
                     BarMark(
                         x: .value("Day", fast.start, unit: .day),
                         y: .value("Hours", fast.duration() / 3600))
-                    .foregroundStyle(fast.metGoal() ? Color.green.gradient : Color.orange.gradient)
+                    .foregroundStyle(fast.metGoal() ? Theme.success : Theme.shortfall)
                     .cornerRadius(4)
                 }
-                RuleMark(y: .value("Goal", goalHours))
+                RuleMark(y: .value("Goal", goalSeconds / 3600))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                     .foregroundStyle(.secondary)
                     .annotation(position: .top, alignment: .leading) {
-                        Text("Goal \(Format.goal(goalHours))").font(.caption2).foregroundStyle(.secondary)
+                        Text("Goal \(Format.goal(seconds: goalSeconds))").font(.caption2).foregroundStyle(.secondary)
                     }
             }
             .chartYAxisLabel("hours")
@@ -225,14 +225,14 @@ private struct FastRow: View {
             }
             Spacer()
             if fast.isActive {
-                Text("In progress").font(.caption.weight(.semibold)).foregroundStyle(.indigo)
+                Text("In progress").font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
             } else {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(Format.hoursMinutes(fast.duration())).font(.body.monospacedDigit().weight(.semibold))
-                    Label(fast.metGoal() ? "Goal met" : "Goal \(Format.goal(fast.goalHours))",
+                    Label(fast.metGoal() ? "Goal met" : "Goal \(Format.goal(seconds: fast.goalSeconds))",
                           systemImage: fast.metGoal() ? "checkmark.circle.fill" : "circle")
                         .font(.caption2)
-                        .foregroundStyle(fast.metGoal() ? .green : .secondary)
+                        .foregroundStyle(fast.metGoal() ? Theme.success : Color.secondary)
                 }
             }
         }

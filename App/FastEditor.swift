@@ -11,7 +11,8 @@ struct FastEditor: View {
     // Plain defaults here; the real values are copied in from `fast` in `onAppear`.
     @State private var start = Date.now
     @State private var end = Date.now
-    @State private var goalHours = 16.0
+    @State private var goalSeconds: TimeInterval = FastingData.defaultGoalSeconds
+    @State private var editingGoal = false
     /// Fixed when the editor opens, so the pickers' limits don't shift while you're using them.
     @State private var latest = Date.now
     @State private var loaded = false
@@ -38,7 +39,11 @@ struct FastEditor: View {
                 }
 
                 Section {
-                    Stepper("Goal: \(Format.goal(goalHours))", value: $goalHours, in: 1...168, step: 1)
+                    DisclosureGroup(isExpanded: $editingGoal) {
+                        DurationWheels(seconds: $goalSeconds)
+                    } label: {
+                        LabeledContent("Goal", value: Format.goal(seconds: goalSeconds))
+                    }
                 }
 
                 if existsInStore {
@@ -68,7 +73,7 @@ struct FastEditor: View {
             latest = .now
             start = Date.earlier(fast.start, latest)
             end = fast.end ?? latest
-            goalHours = fast.goalHours
+            goalSeconds = CustomDuration.clamp(fast.goalSeconds)
         }
     }
 
@@ -76,7 +81,7 @@ struct FastEditor: View {
         var updated = fast
         updated.start = start
         updated.end = fast.isActive ? nil : Date.later(end, start)
-        updated.goalHours = goalHours
+        updated.goalSeconds = goalSeconds
         model.save(updated)
         dismiss()
     }

@@ -43,13 +43,22 @@ project.yml          XcodeGen spec (generates the .xcodeproj, Info.plists, entit
 Packages/FastingCore Logic with no UI, shared by every target and unit-tested
   Fast.swift           Data model + formatting
   FastingStats.swift   Stats and the per-day timeline segments
+  FastingPreset.swift  Preset goals and custom-duration rules
+  FastingStage.swift   Fasting stages table
   DateCompare.swift    Safe Date comparisons (use these, never < > min max on Dates)
 Shared/              Compiled into both the app and the widget
   Persistence.swift    The SwiftData database in the App Group, synced with iCloud by the app
   FastRecord.swift     How a fast is stored
   FastStore.swift      Read/write fasts, widget reloads, goal notification
+  Design/Theme.swift   Colours, spacing, type and the progress ring
   FastingIntents.swift Start / End / Toggle App Intents
-App/                 The iPhone app (timer, history + charts, editor, Siri shortcuts)
+App/                 The iPhone app
+  TodayView.swift      Ring, live timer, current stage, start/end
+  DurationPicker.swift Preset and custom fasting goals
+  StagesView.swift     Fasting stages guide
+  HistoryView.swift    Stats, charts and the list of fasts
+  SettingsView.swift   Default goal, notifications, health note
+  OnboardingView.swift First-launch introduction
 Widget/              Lock Screen and Home Screen widgets + the Lock Screen control
 .github/workflows    CI: runs the FastingCore tests and builds the app on every push
 ```
