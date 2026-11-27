@@ -6,5 +6,6 @@ struct FastingWidgetBundle: WidgetBundle {
     var body: some Widget {
         FastingWidget()
         FastingControl()
+        FastingLiveActivity()
     }
 }

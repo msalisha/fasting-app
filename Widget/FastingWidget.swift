@@ -9,13 +9,13 @@ struct FastingEntry: TimelineEntry {
     let date: Date
     let active: Fast?
     let lastFast: Fast?
-    let goalHours: Double
+    let goalSeconds: TimeInterval
 
     static let preview = FastingEntry(
         date: .now,
         active: Fast(start: .now.addingTimeInterval(-11.5 * 3600), goalHours: 16),
         lastFast: nil,
-        goalHours: 16)
+        goalSeconds: 16 * 3600)
 }
 
 struct FastingProvider: TimelineProvider {
@@ -43,7 +43,7 @@ struct FastingProvider: TimelineProvider {
     }
 
     private func entry(at date: Date, data: FastingData) -> FastingEntry {
-        FastingEntry(date: date, active: data.activeFast, lastFast: data.lastCompletedFast, goalHours: data.goalHours)
+        FastingEntry(date: date, active: data.activeFast, lastFast: data.lastCompletedFast, goalSeconds: data.goalSeconds)
     }
 }
 
@@ -56,8 +56,8 @@ struct FastingWidget: Widget {
                 .widgetURL(URL(string: "stillfast://open"))
         }
         .configurationDisplayName("Stillfast")
-        .description("See how long you've been fasting.")
-        .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline, .systemSmall])
+        .description("See your fast at a glance, and start or end it.")
+        .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline, .systemSmall, .systemMedium])
     }
 }
 
@@ -73,10 +73,10 @@ struct FastingWidgetView: View {
             RectangularView(entry: entry).containerBackground(for: .widget) { Color.clear }
         case .accessoryInline:
             InlineView(entry: entry).containerBackground(for: .widget) { Color.clear }
+        case .systemMedium:
+            MediumView(entry: entry).containerBackground(for: .widget) { Theme.background }
         default:
-            SmallView(entry: entry).containerBackground(for: .widget) {
-                LinearGradient(colors: [.indigo, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
-            }
+            SmallView(entry: entry).containerBackground(for: .widget) { Theme.background }
         }
     }
 }
@@ -191,7 +191,30 @@ private struct InlineView: View {
     }
 }
 
-// MARK: - Home screen: small, with a start/stop button
+// MARK: - Home screen
+
+/// Start or end button for the Home Screen widgets. Runs in the app so the Live Activity follows.
+private struct FastButton: View {
+    let isFasting: Bool
+
+    var body: some View {
+        if isFasting {
+            Button(intent: EndFastIntent()) {
+                Text("End fast").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(Theme.accent)
+        } else {
+            Button(intent: StartFastIntent()) {
+                Text("Start fast")
+                    .frame(maxWidth: .infinity)
+                    .foregroundStyle(Theme.onAccent)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.accent)
+        }
+    }
+}
 
 private struct SmallView: View {
     let entry: FastingEntry
@@ -199,33 +222,105 @@ private struct SmallView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let fast = entry.active {
-                Label(fast.metGoal(at: entry.date) ? "Goal reached" : "Fasting", systemImage: "timer")
-                    .font(.caption.weight(.semibold))
-                Text(timerInterval: Date.span(fast.start, .distantFuture), countsDown: false, showsHours: true)
-                    .font(.title2.monospacedDigit().weight(.bold))
-                ProgressView(value: fast.progress(at: entry.date))
-                    .tint(.white)
-                Spacer(minLength: 0)
-                Button(intent: EndFastIntent()) {
-                    Label("End", systemImage: "stop.fill").frame(maxWidth: .infinity)
+                HStack {
+                    Text(fast.metGoal(at: entry.date) ? "Goal reached" : "Fasting")
+                    Spacer(minLength: 4)
+                    Text(Format.goal(seconds: fast.goalSeconds))
                 }
-                .tint(.white.opacity(0.25))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+                Text(timerInterval: Date.span(fast.start, .distantFuture), countsDown: false, showsHours: true)
+                    .font(Theme.numerals(26))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+
+                ProgressView(value: fast.progress(at: entry.date))
+                    .tint(Theme.accent)
             } else {
-                Label("Not fasting", systemImage: "fork.knife")
+                Text("Not fasting")
                     .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
                 if let last = entry.lastFast {
                     Text(Format.hoursMinutes(last.duration()))
-                        .font(.title2.monospacedDigit().weight(.bold))
-                    Text("last fast").font(.caption2).opacity(0.8)
+                        .font(Theme.numerals(26))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text("last fast")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer(minLength: 0)
+            FastButton(isFasting: entry.active != nil)
+        }
+    }
+}
+
+private struct MediumView: View {
+    let entry: FastingEntry
+
+    var body: some View {
+        HStack(spacing: Theme.Space.m) {
+            ring
+                .frame(width: 112, height: 112)
+
+            VStack(alignment: .leading, spacing: 4) {
+                if let fast = entry.active {
+                    let stage = FastingStage.stage(atElapsed: fast.duration(at: entry.date))
+
+                    Text(fast.metGoal(at: entry.date) ? "Goal reached" : "Fasting")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(timerInterval: Date.span(fast.start, .distantFuture), countsDown: false, showsHours: true)
+                        .font(Theme.numerals(28))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Label(stage.name, systemImage: stage.symbol)
+                        .font(.caption)
+                        .foregroundStyle(Theme.accent)
+                        .lineLimit(1)
+                    Text("Goal \(Format.goal(seconds: fast.goalSeconds)) · \(fast.goalEnd, style: .time)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                } else {
+                    Text("Not fasting")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    if let last = entry.lastFast, let end = last.end {
+                        Text("Last \(Format.hoursMinutes(last.duration()))")
+                            .font(Theme.numerals(24))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                        Text("Ate \(end, style: .relative) ago")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    } else {
+                        Text("Goal \(Format.goal(seconds: entry.goalSeconds))")
+                            .font(Theme.numerals(24))
+                    }
                 }
                 Spacer(minLength: 0)
-                Button(intent: StartFastIntent()) {
-                    Label("Start", systemImage: "play.fill").frame(maxWidth: .infinity)
-                }
-                .tint(.white.opacity(0.25))
+                FastButton(isFasting: entry.active != nil)
             }
         }
-        .foregroundStyle(.white)
+    }
+
+    private var ring: some View {
+        ZStack {
+            ProgressRing(progress: entry.active?.progress(at: entry.date) ?? 0, lineWidth: 10)
+            if let fast = entry.active {
+                Text("\(Int((fast.progress(at: entry.date) * 100).rounded()))%")
+                    .font(Theme.numerals(20))
+            } else {
+                Image(systemName: "leaf")
+                    .font(.title2.weight(.light))
+                    .foregroundStyle(Theme.accent)
+            }
+        }
     }
 }
 
@@ -235,10 +330,16 @@ private struct SmallView: View {
     FastingEntry.preview
     FastingEntry(date: .now, active: nil,
                  lastFast: Fast(start: .now.addingTimeInterval(-20 * 3600), end: .now.addingTimeInterval(-3 * 3600), goalHours: 16),
-                 goalHours: 16)
+                 goalSeconds: 16 * 3600)
 }
 
 #Preview("Circular", as: .accessoryCircular) {
+    FastingWidget()
+} timeline: {
+    FastingEntry.preview
+}
+
+#Preview("Medium", as: .systemMedium) {
     FastingWidget()
 } timeline: {
     FastingEntry.preview

@@ -43,6 +43,7 @@ targets:
         CFBundleDisplayName: Stillfast
         AppGroupID: group.$(BASE_BUNDLE_ID)
         CloudContainerID: iCloud.$(BASE_BUNDLE_ID)
+        NSSupportsLiveActivities: true
         UIBackgroundModes: [remote-notification]
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]

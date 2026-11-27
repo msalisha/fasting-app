@@ -37,6 +37,8 @@ final class FastingModel {
 
     func reload() {
         data = FastStore.load()
+        // Covers fasts started elsewhere (another device, or while the app was closed).
+        LiveActivityController.sync(with: data)
     }
 
     func start(at date: Date = .now) {

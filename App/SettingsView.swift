@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage(GoalNotifier.enabledKey, store: AppGroup.defaults) private var notifyGoalReached = true
     @AppStorage(AccentTheme.storageKey, store: AppGroup.defaults) private var accentTheme = AccentTheme.sage.rawValue
     @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system.rawValue
+    @AppStorage(LiveActivityController.enabledKey, store: AppGroup.defaults) private var liveActivity = true
     @State private var choosingGoal = false
 
     private var version: String {
@@ -49,6 +50,14 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("Live Activity", isOn: $liveActivity)
+                } header: {
+                    Text("Lock Screen")
+                } footer: {
+                    Text("Shows a live timer on the Lock Screen and in the Dynamic Island while you fast. iOS stops Live Activities after about 8 hours; the Stillfast widget keeps going.")
+                }
+
+                Section {
                     Toggle("Goal reached", isOn: $notifyGoalReached)
                 } header: {
                     Text("Notifications")
@@ -75,6 +84,9 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .sheet(isPresented: $choosingGoal) {
                 DurationPicker().environment(model)
+            }
+            .onChange(of: liveActivity) { _, _ in
+                LiveActivityController.sync(with: model.data)
             }
             .onChange(of: notifyGoalReached) { _, enabled in
                 if enabled { GoalNotifier.requestPermission() }

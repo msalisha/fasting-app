@@ -61,6 +61,7 @@ enum FastStore {
         WidgetCenter.shared.reloadAllTimelines()
         ControlCenter.shared.reloadControls(ofKind: controlKind)
         GoalNotifier.sync(with: data)
+        LiveActivityController.sync(with: data)
     }
 
     private static func fetchRecords(in context: ModelContext) -> [FastRecord] {

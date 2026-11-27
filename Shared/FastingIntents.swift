@@ -1,8 +1,11 @@
 import AppIntents
 import FastingCore
 
+// These are LiveActivityIntents so they run in the app, which can start and end the Live Activity,
+// even when tapped in a widget, the Lock Screen control or the Live Activity itself.
+
 /// Used by the home-screen widget button, Siri and Shortcuts.
-struct StartFastIntent: AppIntent {
+struct StartFastIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Start Fast"
     static let description = IntentDescription("Starts a new fast now.")
 
@@ -13,7 +16,7 @@ struct StartFastIntent: AppIntent {
     }
 }
 
-struct EndFastIntent: AppIntent {
+struct EndFastIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "End Fast"
     static let description = IntentDescription("Ends the current fast now.")
 
@@ -27,7 +30,7 @@ struct EndFastIntent: AppIntent {
 }
 
 /// Backs the lock screen / Control Center toggle.
-struct SetFastingIntent: SetValueIntent {
+struct SetFastingIntent: SetValueIntent, LiveActivityIntent {
     static let title: LocalizedStringResource = "Set Fasting"
 
     @Parameter(title: "Fasting")
